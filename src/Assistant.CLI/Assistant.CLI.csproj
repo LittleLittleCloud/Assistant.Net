@@ -1,0 +1,9 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+	  <TargetFramework>$(TargetFrameworkVersion)</TargetFramework>
+	  <OutputType>Exe</OutputType>
+	  <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+</Project>
