@@ -18,7 +18,7 @@ public class CodeInterpreterWorkflow : IAgent
     private readonly IAgent _userAgent;
     private readonly int _maxRound;
 
-    public static readonly Step MoreInformation = new Step
+    public static readonly Step NeedInfo = new Step
     {
         Name = "NeedInfo",
         Description = "Ask for more information when details are not enough or unclear",
@@ -66,7 +66,7 @@ public class CodeInterpreterWorkflow : IAgent
 
     public static IEnumerable<Step> Steps => new[]
     {
-        MoreInformation,
+        NeedInfo,
         Approval,
         WriteCode,
         RunCode,
@@ -114,21 +114,31 @@ public class CodeInterpreterWorkflow : IAgent
         var needInfoMessage = new Message(role: Role.User, "hey, help me create a folder");
         var needInfoStep = new Step
         {
-            Name = MoreInformation.Name,
+            Name = NeedInfo.Name,
             Argument = "ask user: what's the name of the folder?",
             Reason = "The user has asked for help to create a folder but the folder name is not provided",
         };
         var needInfoStepMessage = CreateMessageFromStep(needInfoStep);
 
+        var needAuthorizeMessage = new Message(role: Role.User, "### Output\n\n 403 Forbidden");
+        var needAuthorizenStep = new Step
+        {
+            Name = NeedInfo.Name,
+            Argument = "ask user: please provide necessary information for authorization",
+            Reason = "The code returns 403 Forbidden, which means the user needs to provide necessary information for authorization",
+        };
+        var needAuthorizeStepMessage = CreateMessageFromStep(needAuthorizenStep);
         return [
+            needInfoMessage,
+            needInfoStepMessage,
             writeCodeMessage,
             writeCodeStepMessage,
             runCodeMessage,
             runCodeStepMessage,
+            needAuthorizeMessage,
+            needAuthorizeStepMessage,
             codeResultMessage,
             codeResultStepMessage,
-            needInfoMessage,
-            needInfoStepMessage,
             ];
     }
 
@@ -201,11 +211,28 @@ public class CodeInterpreterWorkflow : IAgent
             return currentStep.Name == FixError.Name;
         });
 
+        var userToUserTransition = Transition.Create(this._userAgent, this._userAgent, async (from, to, messages) =>
+        {
+            return currentStep.Name == NeedInfo.Name;
+        });
+        var coderToUserTransition = Transition.Create(coderAgent, this._userAgent, async (from, to, messages) =>
+        {
+            return currentStep.Name == NeedInfo.Name;
+        });
+
+        var runnerToUserTransition = Transition.Create(runnerAgent, this._userAgent, async (from, to, messages) =>
+        {
+            return currentStep.Name == Approval.Name || currentStep.Name == NeedInfo.Name;
+        });
+
         var workflow = new AutoGen.Workflow(
             transitions: [
                 coderToRunnerTransition,
                 userToCoderTransition,
                 runnerToCoderTransition,
+                userToUserTransition,
+                coderToUserTransition,
+                runnerToUserTransition,
                 ]
             );
 
@@ -220,14 +247,15 @@ public class CodeInterpreterWorkflow : IAgent
 
         var chatHistory = messages;
         var examplars = CreateFewshotExampleMessagesForPlanner();
+        var previousStepMessages = new List<Message>();
         for (int i = 0; i < _maxRound; i++)
         {
             var lastMessage = chatHistory.Last();
-            var plannerReply = await _plannerAgent.SendAsync(lastMessage, examplars);
+            var chatHistoryToPlanner = examplars.Concat(previousStepMessages).Concat([lastMessage]).TakeLast(5);
+            var plannerReply = await _plannerAgent.SendAsync(chatHistory: chatHistoryToPlanner);
             currentStep = JsonSerializer.Deserialize<Step>(plannerReply.Content ?? throw new ArgumentNullException("planner reply content is null"));
-
             // check exit condition
-            if (currentStep.Name == Succeed.Name)
+            if (currentStep.Name == Succeed.Name || currentStep.Name == Fail.Name)
             {
                 plannerReply.From = this.Name;
                 return plannerReply;
@@ -235,6 +263,8 @@ public class CodeInterpreterWorkflow : IAgent
 
             var reply = await groupChat.CallAsync(chatHistory, maxRound: 1, cancellationToken) ?? throw new ArgumentNullException("reply is null");
             chatHistory = reply;
+            previousStepMessages.Add(lastMessage);
+            previousStepMessages.Add(CreateMessageFromStep(currentStep));
         }
 
         var failStep = new Step

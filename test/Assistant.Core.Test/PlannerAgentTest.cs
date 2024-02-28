@@ -79,6 +79,6 @@ public class PlannerAgentTest
 
         reply = await planner.SendAsync("hey, I have a task to resolve");
         step = JsonSerializer.Deserialize<Step>(reply.Content!);
-        step.Name.Should().Be(CodeInterpreterWorkflow.MoreInformation.Name);
+        step.Name.Should().Be(CodeInterpreterWorkflow.NeedInfo.Name);
     }
 }

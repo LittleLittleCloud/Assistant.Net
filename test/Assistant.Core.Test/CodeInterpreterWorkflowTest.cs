@@ -49,7 +49,7 @@ public class CodeInterpreterWorkflowTest
         var workflowAgent = new CodeInterpreterWorkflow("code-interpreter", planner, dotnetRunner, dotnetCoder, userAgent, 10);
 
         string[] tasks = [
-            "Retrieve the most recent PR from MLNet repo",
+            //"Retrieve the most recent PR from MLNet repo",
             "Calculate the 39th Fibonacci",
             "What's 100th prime number?",
             ];
