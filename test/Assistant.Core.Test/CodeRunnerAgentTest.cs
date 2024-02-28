@@ -28,7 +28,7 @@ public class CodeRunnerAgentTest
     [ApiKeyFact("AZURE_OPENAI_API_KEY", "AZURE_OPENAI_ENDPOINT")]
     public async Task TestDotnetCodeRunnerAsync()
     {
-        var llmFactory = Utils.CreateAzureOpenAIGPTFactory();
+        var llmFactory = Utils.CreateAzureOpenAIGPT35Factory();
         var workingDirectory = Path.Join(Path.GetTempPath(), nameof(CodeRunnerAgentTest));
         if (!Directory.Exists(workingDirectory))
         {

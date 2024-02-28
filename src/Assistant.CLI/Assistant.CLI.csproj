@@ -4,6 +4,12 @@
 	  <TargetFramework>$(TargetFrameworkVersion)</TargetFramework>
 	  <OutputType>Exe</OutputType>
 	  <IsPackable>true</IsPackable>
+    <SignAssembly>False</SignAssembly>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Spectre.Console.Cli" Version="0.48.0" />
+    <ProjectReference Include="..\Assistant.Core\Assistant.Core.csproj" />
+  </ItemGroup>
 
 </Project>

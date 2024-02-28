@@ -25,7 +25,7 @@ public partial class DotnetCoderAgentTest
     [ApiKeyFact("AZURE_OPENAI_API_KEY", "AZURE_OPENAI_ENDPOINT")]
     public async Task TestDotnetCoderAsync()
     {
-        var llmFactory = Utils.CreateAzureOpenAIGPTFactory();
+        var llmFactory = Utils.CreateAzureOpenAIGPT35Factory();
         var coder = new DotnetCoder("dotnet-coder", llmFactory);
 
         coder.Name.Should().Be("dotnet-coder");

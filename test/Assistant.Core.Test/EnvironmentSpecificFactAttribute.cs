@@ -30,6 +30,36 @@ public abstract class EnvironmentSpecificFactAttribute : FactAttribute
     protected abstract bool IsEnvironmentSupported();
 }
 
+[AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
+public abstract class EnvironmentSpecificTheoryAttribute : TheoryAttribute
+{
+    private readonly string _skipMessage;
+
+    protected EnvironmentSpecificTheoryAttribute(string skipMessage)
+    {
+        _skipMessage = skipMessage ?? throw new ArgumentNullException(nameof(skipMessage));
+    }
+
+    public sealed override string Skip => IsEnvironmentSupported() ? string.Empty : _skipMessage;
+
+    protected abstract bool IsEnvironmentSupported();
+}
+
+public sealed class ApiKeyTheoryAttribute : EnvironmentSpecificTheoryAttribute
+{
+    private readonly string[] _envVariableNames;
+    public ApiKeyTheoryAttribute(params string[] envVariableNames) : base($"{envVariableNames} is not found in env")
+    {
+        _envVariableNames = envVariableNames;
+    }
+
+    /// <inheritdoc />
+    protected override bool IsEnvironmentSupported()
+    {
+        return _envVariableNames.All(Environment.GetEnvironmentVariables().Contains);
+    }
+}
+
 public sealed class ApiKeyFactAttribute : EnvironmentSpecificFactAttribute
 {
     private readonly string[] _envVariableNames;

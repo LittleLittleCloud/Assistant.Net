@@ -10,7 +10,7 @@ namespace Assistant.Core;
 
 public static class AgentExtension
 {
-    public static IAgent FormatAsJsonAsync<T>(this IAgent agent, int maxRetry = 5)
+    public static IAgent FormatAsJsonAsync<T>(this IAgent agent, int maxRetry = 5, IAgent? formatAgent = null)
     {
         var jsonSchemaBuilder = new JsonSchemaBuilder().FromType<T>();
         var jsonSchema = jsonSchemaBuilder.Build();
@@ -29,14 +29,14 @@ public static class AgentExtension
                     catch (JsonException ex)
                     {
                         var prompt = $"""
-                        Fix the error and format the plain text into Json object. The object must conform to the following schema:
+                        Fix the error and convert the text into Json object according to the schema below.
+                        
+                        ```plaintext
+                        {content}
+                        ```
 
                         ```schema
                         {JsonSerializer.Serialize(jsonSchema)}
-                        ```
-
-                        ```plaintext
-                        {content}
                         ```
 
                         ```error
@@ -45,7 +45,8 @@ public static class AgentExtension
 
                         return json directly, don't wrap it inside any block or include any other text.
                         """;
-                        reply = await innerAgent.SendAsync(prompt);
+                        formatAgent ??= innerAgent;
+                        reply = await formatAgent.SendAsync(prompt);
                         maxRetry--;
                         continue;
                     }

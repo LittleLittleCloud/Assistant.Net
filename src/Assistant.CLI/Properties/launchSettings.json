@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Assistant.CLI": {
+      "commandName": "Project",
+      "commandLineArgs": "start"
+    }
+  }
+}

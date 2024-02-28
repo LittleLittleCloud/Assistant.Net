@@ -8,27 +8,6 @@ using AutoGen.DotnetInteractive;
 
 namespace Assistant.Core.Agent;
 
-public class CodeRunner : IAgent
-{
-    private readonly IAgent _innerAgent;
-
-    private string _reviewerSystemMessage = """
-        You review the 
-        """;
-
-    public CodeRunner(string name, ILLMFactory llmFactory)
-    {
-        _innerAgent = llmFactory.Create(name, _reviewerSystemMessage);
-    }
-
-    public string? Name => _innerAgent.Name;
-
-    public Task<Message> GenerateReplyAsync(IEnumerable<Message> messages, GenerateReplyOptions? options = null, CancellationToken cancellationToken = default)
-    {
-        return _innerAgent.GenerateReplyAsync(messages, options, cancellationToken);
-    }
-}
-
 public class DotnetCodeRunner : IAgent
 {
     private readonly IAgent _helperAgent;
